@@ -38,6 +38,7 @@ class Stage2Test {
     /**
      * 생성된 트랜잭션이 몇 개인가?
      * 왜 그런 결과가 나왔을까?
+     * 1개. 그러게 왜 1개일까? firstUserService는 required, secondUserService에서 호출한 메서드는 required -- 합쳐짐
      */
     @Test
     void testRequired() {
@@ -45,13 +46,14 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
+                .hasSize(1)
                 .containsExactly("");
     }
 
     /**
      * 생성된 트랜잭션이 몇 개인가?
      * 왜 그런 결과가 나왔을까?
+     * 2개. 그러게 왜 2개일까? firstUserService는 required, secondUserService에서 호출한 메서드는 required_new
      */
     @Test
     void testRequiredNew() {
@@ -59,7 +61,7 @@ class Stage2Test {
 
         log.info("transactions : {}", actual);
         assertThat(actual)
-                .hasSize(0)
+                .hasSize(2)
                 .containsExactly("");
     }
 
@@ -69,17 +71,19 @@ class Stage2Test {
      */
     @Test
     void testRequiredNewWithRollback() {
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(0);
 
         assertThatThrownBy(() -> firstUserService.saveAndExceptionWithRequiredNew())
                 .isInstanceOf(RuntimeException.class);
 
-        assertThat(firstUserService.findAll()).hasSize(-1);
+        assertThat(firstUserService.findAll()).hasSize(1);
     }
 
     /**
      * FirstUserService.saveFirstTransactionWithSupports() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
+     * transaction1에 required로 트랜잭션이 걸려있으면 transaction2도 트랜잭션을 건다.
+     * transaction1에 트랜잭션이 없으면 transaction2도 실행하지 않는다.
      */
     @Test
     void testSupports() {
@@ -95,6 +99,7 @@ class Stage2Test {
      * FirstUserService.saveFirstTransactionWithMandatory() 메서드를 보면 @Transactional이 주석으로 되어 있다.
      * 주석인 상태에서 테스트를 실행했을 때와 주석을 해제하고 테스트를 실행했을 때 어떤 차이점이 있는지 확인해보자.
      * SUPPORTS와 어떤 점이 다른지도 같이 챙겨보자.
+     * first에서 실행되어 있는 트랜잭션이 없다면 예외 발생
      */
     @Test
     void testMandatory() {
